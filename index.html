@@ -1,8 +1,17 @@
 <html>
     <head>
         <title>A Brand New Repo</title>
+        <link rel="stylesheet" href="./style.css">
     </head>
     <body>
-        <p>hello me</p>
+        <p>WELCOME TO THE CANVAS</p>
+        <canvas id="canvas" width="1350" height="600"></canvas>
+        <img id="boardpaw" src="./assets/boardpaw.png">
+        <img id="floor" src="./assets/floor.png">
+        <script type="module" src="./scripts/main.js"></script>
+        <script type="module">
+            import { init } from "./scripts/main.js";
+            init();
+        </script>
     </body>
 </html>
