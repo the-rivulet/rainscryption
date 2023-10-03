@@ -15,14 +15,6 @@ function clearCanvas() {
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, canvas.width, canvas.height);
-    // Draw the floor
-    /*let floor = document.getElementById("floor") as HTMLImageElement;
-    for(let x = 0; x < canvas.width; x += floor.width) {
-        for(let y = 0; y < canvas.height; y + floor.height) {
-            alert("Drew image " + floor.width + " x " + floor.height + " out of " + canvas.width + " x " + canvas.height);
-            context.drawImage(floor, x, y);
-        }
-    }*/
     context.restore();
 }
 
