@@ -1,3 +1,11 @@
+@font-face {
+    font-family: 'Heavyweight Regular';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Heavyweight Regular'), url('assets/HEAVYWEI.woff') format('woff');
+}
+
 p {
+    font-family: 'Heavyweight Regular';
     color: blueviolet;
 }

@@ -1,9 +1,11 @@
-import { transform } from "../node_modules/typescript/lib/typescript";
+import { game } from "./game.js";
+import { getImg, mouse } from "./globals.js";
+import { bestiary } from "./bestiary.js";
 
 let canvas: HTMLCanvasElement;
 let context: CanvasRenderingContext2D;
 
-function drawTrapezoid(img: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement | ImageBitmap | OffscreenCanvas, dx: number, dy: number, t: number, b: number, yMult: number, flip = false) {
+function drawTrapezoid(img: HTMLImageElement, dx: number, dy: number, t: number, b: number, yMult = 1, flip = false) {
     for(let y = 0; y < img.height; y++) {
         let py = y / img.height;
         let sx = (1 - py) * t + py * b;
@@ -13,18 +15,18 @@ function drawTrapezoid(img: HTMLCanvasElement | HTMLImageElement | HTMLVideoElem
     }
 }
 
-function clearCanvas() {
+function updateCanvas() {
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = "black";
     context.fillRect(0, 0, canvas.width, canvas.height);
     // Floor
-    let f1 = document.getElementById("floor1") as HTMLImageElement;
-    let f2 = document.getElementById("floor2") as HTMLImageElement;
+    const height = 400;
+    let f1 = getImg("floor1");
+    let f2 = getImg("floor2");
     context.globalAlpha = 0.7;
     context.drawImage(f1, 0, 400, 1350, 200);
-    const height = 400;
     context.drawImage(f2, 0, 400 - height, 800, height);
     context.drawImage(f2, 300, 0, f2.width - 300, f2.height, 800, 400 - height, 550, height);
     context.globalAlpha = 1;
@@ -34,26 +36,7 @@ function clearCanvas() {
     gradient.addColorStop(1, "rgba(0,0,0,1)");
     context.fillStyle = gradient;
     context.fillRect(0, 0, 1350, 675); // Fill rectangle over image with the gradient
-    // Scales
-    let scales = document.getElementById("scales") as HTMLImageElement;
-    context.drawImage(scales, 150, 0);
-    let meter = document.getElementById("meter") as HTMLImageElement;
-    // Meter rotates based on damage
-    context.drawImage(meter, 330, 5);
-    context.translate(340, 80);
-    context.rotate(50);
-    context.translate(-340, -80);
-    context.drawImage(meter, 330, 5);
-    context.translate(340, 80);
-    context.rotate(-100);
-    context.translate(-340, -80);
-    context.drawImage(meter, 330, 5);
-    context.rotate(50);
-    context.restore();
-}
-
-function drawBattleBoard() {
-    let paw = document.getElementById("boardpaw") as HTMLImageElement;
+    let paw = getImg("boardpaw");
     // Your side
     for(let i = 0; i < 4; i++) {
         context.setTransform(1, 0, -0.55 + 0.5 * i, 1, 0, 0);
@@ -65,19 +48,87 @@ function drawBattleBoard() {
         drawTrapezoid(paw, 700 - 50 * i, 280, 1.14, 0.85, 0.4, true);
     }
     // Incoming
-    let inc = document.getElementById("incoming") as HTMLImageElement;
+    let inc = getImg("incoming");
     for(let i = 0; i < 4; i++) {
         context.setTransform(1, 0, -0.55 + 0.5 * i, 1, 0, 0);
         drawTrapezoid(inc, 647 - 50 * i, 217, 0.35, 0.4, 0.65);
     }
+    // Scales
+    let scales = getImg("scales");
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = 0.85;
+    context.drawImage(scales, 150, 0);
+    let meter = getImg("meter");
+    // Meter rotates based on damage
+    let deg = 8 * game.damage - 1;
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.translate(340, 80);
+    context.scale(1, 0.9 - deg * 0.003);
+    context.rotate(deg * Math.PI / 180);
+    context.translate(-340, -80);
+    context.drawImage(meter, 330, 5);
+    context.globalAlpha = 1;
+    // Draw piles
+    let back = getImg("back");
+    for(let i of game.drawPile) {
+        context.setTransform(1, 0, 0.95, 1, 0, 0);
+        drawTrapezoid(back, 600 + i.viz.pileOffsetX, 450 + i.viz.pileOffsetY, 1.6, 2.1);
+    }
+    let squirrelBack = getImg("squirrel-back");
+    for(let i of game.sideDeckPile) {
+        context.setTransform(1, 0, 1.35, 1, 0, 0);
+        drawTrapezoid(squirrelBack, 560 + i.viz.pileOffsetX, 450 + i.viz.pileOffsetY, 1.6, 2.1);
+    }
+    // Draw the hand
+    let blankCard = getImg("blank-card");
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    for(let i of game.hand) {
+        // Fix X position
+        let baseX = 675 + 70 * (game.hand.indexOf(i) - 0.5 * game.hand.length);
+        let goalX = baseX + (i.isHovering() ? -50 : game.hand.filter(x => x.isHovering(false)).length == 0 ? 0 : mouse.adjustedX > baseX ? -50 : 50);
+        i.viz.handX += 0.2 * (goalX - i.viz.handX);
+        let goalY = 450 - (i.isHovering() ? 100 : 0);
+        i.viz.handY += 0.2 * (goalY - i.viz.handY);
+        context.drawImage(blankCard, i.viz.handX, i.viz.handY, 169, 256);
+        context.fillStyle = "black";
+        context.font = "26px Heavyweight Regular";
+        // Put it approximately in the middle
+        context.fillText(i.name, i.viz.handX + 90 - 5.6 * i.name.length, i.viz.handY + 35);
+        // Get the proper cost symbol
+        let costSymbol = getImg(i.cost + i.costType);
+        if(costSymbol) {
+            context.drawImage(costSymbol, i.viz.handX + 160 - costSymbol.width * 0.32, i.viz.handY + 50, costSymbol.width * 0.32, costSymbol.height * 0.32);
+        }
+        // Draw power and health
+        context.font = "40px Heavyweight Regular";
+        context.fillText(i.power.toString(), i.viz.handX + 17, i.viz.handY + 217);
+        if(i.currentHealth < i.baseHealth) context.fillStyle = "darkred";
+        context.fillText(i.currentHealth.toString(), i.viz.handX + 137, i.viz.handY + 230);
+        // Sigils
+        let sigils = i.sigils.map(x => getImg(x));
+        if(i.sigils.length == 1) {
+            context.drawImage(sigils[0], i.viz.handX + 50, i.viz.handY + 176, 70, 70);
+        }
+    }
+    context.restore();
 }
 
-export function init() {
+export function startGame() {
     try {
         canvas = document.getElementById("canvas") as HTMLCanvasElement;
         context = canvas.getContext("2d");
-        clearCanvas();
-        drawBattleBoard();
+        let deck = [
+            bestiary.stoat(),
+            bestiary.wolf(),
+            bestiary.wolf(),
+            bestiary.turkeyVulture(),
+            bestiary.turkeyVulture()
+        ];
+        for(let i of deck) {
+            game.deck.push(i);
+        }
+        game.startCombat();
+        setInterval(updateCanvas, 33);
     } catch(e) {
         alert(e);
     }

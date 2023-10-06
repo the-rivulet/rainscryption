@@ -1,21 +1,36 @@
 <html>
     <head>
         <title>a brand new repo!</title>
+        <link rel="shortcut icon" href="./assets/boardpaw.png">
         <link rel="stylesheet" href="./style.css">
     </head>
     <body>
-        <p>WELCOME TO THE CANVAS~</p>
+        <div id="image-container" style="display: none;">
+            <img id="boardpaw" src="./assets/boardpaw.png">
+            <img id="incoming" src="./assets/incoming.png">
+            <img id="floor1" src="./assets/floor1.png">
+            <img id="floor2" src="./assets/floor2.png">
+            <img id="scales" src="./assets/scales.png">
+            <img id="meter" src="./assets/meter.png">
+            <img id="back" src="./assets/back.png">
+            <img id="squirrel-back" src="./assets/squirrel-back.png">
+            <img id="blank-card" src="./assets/blank-card.png">
+            <!-- Costs -->
+            <img id="1blood" src="./assets/costs/one-blood.png">
+            <img id="2blood" src="./assets/costs/two-blood.png">
+            <!-- Sigils -->
+            <img id="airborne" src="./assets/sigils/airborne.png">
+        </div>
+        <p>WELCOME TO THE CANVAS</p>
         <canvas id="canvas" width="1350" height="600"></canvas>
-        <img id="boardpaw" src="./assets/boardpaw.png" style="display: none;">
-        <img id="incoming" src="./assets/incoming.png" style="display: none;">
-        <img id="floor1" src="./assets/floor1.png" style="display: none;">
-        <img id="floor2" src="./assets/floor2.png" style="display: none;">
-        <img id="scales" src="./assets/scales.png" style="display: none;">
-        <img id="meter" src="./assets/meter.png" style="display: none;">
+        <script type="module" src="./scripts/globals.js"></script>
+        <script type="module" src="./scripts/bestiary.js"></script>
+        <script type="module" src="./scripts/card.js"></script>
+        <script type="module" src="./scripts/game.js"></script>
         <script type="module" src="./scripts/main.js"></script>
         <script type="module">
-            import { init } from "./scripts/main.js";
-            init();
+            import { startGame } from "./scripts/main.js";
+            startGame();
         </script>
     </body>
 </html>
