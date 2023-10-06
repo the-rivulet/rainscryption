@@ -6,7 +6,11 @@ class Game {
     hand = [];
     drawPile = [];
     sideDeckPile = [];
+    battlefield = [];
+    incomingCards = [];
     damage = 0;
+    currentlyPlaying;
+    leshyText = "";
     startCombat() {
         this.inCombat = true;
         this.hand = [];

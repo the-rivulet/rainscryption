@@ -5,7 +5,12 @@
     src: local('Heavyweight Regular'), url('assets/HEAVYWEI.woff') format('woff');
 }
 
-p {
-    font-family: 'Heavyweight Regular';
-    color: blueviolet;
+/*html {
+    background: black;
+}*/
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
 }

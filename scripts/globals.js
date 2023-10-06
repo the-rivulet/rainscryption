@@ -30,6 +30,7 @@ export var Zone;
     Zone["drawPile"] = "drawPile";
     Zone["hand"] = "hand";
     Zone["sideDeckPile"] = "sideDeckPile";
+    Zone["incoming"] = "incoming";
     Zone["battlefield"] = "battlefield";
 })(Zone || (Zone = {}));
 export var Player;
