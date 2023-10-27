@@ -33,7 +33,6 @@ export enum Zone {
     drawPile = "drawPile",
     hand = "hand",
     sideDeckPile = "sideDeckPile",
-    incoming = "incoming",
     battlefield = "battlefield"
 }
 

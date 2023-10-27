@@ -1,4 +1,4 @@
-import { Zone, Cost, choice } from "./globals.js";
+import { Zone, Cost, choice, mouse } from "./globals.js";
 import { bestiary } from "./bestiary.js";
 class Game {
     deck = [];
@@ -10,6 +10,7 @@ class Game {
     incomingCards = [];
     damage = 0;
     currentlyPlaying;
+    bloodPaid = 0;
     leshyText = "";
     startCombat() {
         this.inCombat = true;
@@ -48,6 +49,31 @@ class Game {
             i.moveTo(Zone.drawPile);
             this.drawPile.push(i);
         }
+    }
+    // 220 280 340 430
+    get hoveredRow() {
+        if (mouse.adjustedY < 220)
+            return 0;
+        if (mouse.adjustedY < 280)
+            return 1;
+        if (mouse.adjustedY < 340)
+            return 2;
+        if (mouse.adjustedY < 430)
+            return 3;
+        return 0;
+    }
+    get hoveredColumn() {
+        if (mouse.adjustedX < 450)
+            return 0;
+        if (mouse.adjustedX < 600)
+            return 1;
+        if (mouse.adjustedX < 750)
+            return 2;
+        if (mouse.adjustedX < 900)
+            return 3;
+        if (mouse.adjustedX < 1050)
+            return 4;
+        return 0;
     }
 }
 export let game = new Game();

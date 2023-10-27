@@ -19,6 +19,7 @@ export class Card {
     currentHealth;
     sigils = [];
     row = 0;
+    column = 0;
     constructor(name, cost, costType, power, health, owner = Player.you) {
         this.name = name;
         this.cost = cost;

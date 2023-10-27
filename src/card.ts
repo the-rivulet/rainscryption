@@ -21,6 +21,7 @@ export class Card {
     currentHealth: number;
     sigils: Sigil[] = [];
     row = 0;
+    column = 0;
     constructor(name: string, cost: number, costType: Cost, power: number, health: number, owner = Player.you) {
         this.name = name;
         this.cost = cost;
