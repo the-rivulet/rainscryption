@@ -1,2 +1,2 @@
 # rainscryption
-Need I say more?
+why did I make this?
