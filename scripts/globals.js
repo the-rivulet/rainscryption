@@ -40,4 +40,5 @@ export var Player;
 export var Sigil;
 (function (Sigil) {
     Sigil["airborne"] = "airborne";
+    Sigil["worthySacrifice"] = "worthy sacrifice";
 })(Sigil || (Sigil = {}));

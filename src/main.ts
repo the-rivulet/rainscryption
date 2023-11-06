@@ -1,4 +1,4 @@
-import { game } from "./game.js";
+import { Game } from "./game.js";
 import { Cost, Zone, getImg, mouse } from "./globals.js";
 import { bestiary } from "./bestiary.js";
 
@@ -20,18 +20,24 @@ function drawTrapezoid(img: HTMLImageElement, dx: number, dy: number, t: number,
 }
 
 document.onclick = function(e) {
-    for(let i of game.hand) {
+    for(let i of Game.hand) {
         if(i.isHovering()) i.click();
     }
-    if(game.hoveredRow == 3 && game.hoveredColumn && game.currentlyPlaying &&
-        (game.currentlyPlaying.costType == Cost.blood && game.bloodPaid >= game.currentlyPlaying.cost)
-    ) {
-        //alert("Clicked @ " + mouse.adjustedX + "," + mouse.adjustedY);
-        game.currentlyPlaying.row = 3;
-        game.currentlyPlaying.column = game.hoveredColumn;
-        game.currentlyPlaying.moveTo(Zone.battlefield);
-        game.battlefield.push(game.currentlyPlaying);
-        game.currentlyPlaying = undefined;
+    //alert("Clicked at " + mouse.adjustedX + ", " + mouse.adjustedY);
+    if(Game.hoveredRow == 3 && Game.hoveredColumn) {
+        if(Game.currentlyPlaying && Game.currentlyPlaying.costType == Cost.blood) {
+            if(Game.bloodPaid >= Game.currentlyPlaying.cost && !Game.hoveredCard) {
+                Game.currentlyPlaying.playAt(Game.hoveredColumn);
+                Game.currentlyPlaying = undefined;
+            } else if(Game.bloodPaid < Game.currentlyPlaying.cost && Game.hoveredCard) {
+                Game.hoveredCard.sacrifice();
+                if(Game.bloodPaid >= Game.currentlyPlaying.cost) {
+                    Game.leshyText = "The " + Game.hoveredCard.name + "'s cost is paid.";
+                }
+            }
+        }
+    } else if(mouse.adjustedX > 280 && mouse.adjustedY < 400 && mouse.adjustedY > 300 && mouse.adjustedY < 450) {
+        Game.ringBell();
     }
 }
 
@@ -57,18 +63,18 @@ function updateCanvas() {
     }
     // Draw piles
     let back = getImg("back");
-    for(let i of game.drawPile) {
+    for(let i of Game.drawPile) {
         context.setTransform(1, 0, 0.95, 1, 0, 0);
         drawTrapezoid(back, 600 + i.viz.pileOffsetX, 450 + i.viz.pileOffsetY, 1.6, 2.1);
     }
     let squirrelBack = getImg("squirrel-back");
-    for(let i of game.sideDeckPile) {
+    for(let i of Game.sideDeckPile) {
         context.setTransform(1, 0, 1.35, 1, 0, 0);
         drawTrapezoid(squirrelBack, 560 + i.viz.pileOffsetX, 450 + i.viz.pileOffsetY, 1.6, 2.1);
     }
     let blankCard = getImg("blank-card");
-    if(game.currentlyPlaying) {
-        let cp = game.currentlyPlaying;
+    if(Game.currentlyPlaying) {
+        let cp = Game.currentlyPlaying;
         cp.viz.handX += 0.3 * (300 - cp.viz.handX);
         cp.viz.handY += 0.3 * (450 - cp.viz.handY);
         context.setTransform(1, 0, -0.85, 1, 0, 0);
@@ -79,7 +85,7 @@ function updateCanvas() {
         // Get the proper cost symbol
         let costSymbol = getImg(cp.cost + cp.costType);
         if(costSymbol) {
-            context.drawImage(costSymbol, cp.viz.handX + 550 - costSymbol.width * 0.32, cp.viz.handY - 1, costSymbol.width * 0.32, costSymbol.height * 0.32);
+            context.drawImage(costSymbol, cp.viz.handX + 550 - costSymbol.width * 0.25, cp.viz.handY + 25, costSymbol.width * 0.25, costSymbol.height * 0.25);
         }
         // Draw power and health
         context.font = "26px Heavyweight Regular";
@@ -88,17 +94,50 @@ function updateCanvas() {
         context.fillText(cp.currentHealth.toString(), cp.viz.handX + 540, cp.viz.handY + 115);
         // Sigils
         let sigils = cp.sigils.map(x => getImg(x));
-        context.globalAlpha = 1;
         if(cp.sigils.length == 1) {
             context.drawImage(sigils[0], cp.viz.handX + 470, cp.viz.handY + 85, 35, 35);
         }
-        context.globalAlpha = 1;
     }
+    for(let i of Game.fadingCards) {
+        i.viz.opacity -= 0.15;
+        if(i.viz.opacity < 0) {
+            i.viz.opacity = 0;
+            Game.fadingCards.splice(Game.fadingCards.indexOf(i), 1);
+        }
+    }
+    for(let i of [...Game.fadingCards, ...Game.battlefield]) {
+        let c = i.column - 1;
+        let goalX = 425 - 50 * c;
+        i.viz.handX += 0.3 * (goalX - i.viz.handX);
+        let goalY = [0, 225, 280, 345][i.row];
+        i.viz.handY += 0.3 * (goalY - i.viz.handY);
+        let effectiveRow = (i.viz.handY - 200) / 75;
+        let multiX = 345 / (3000 - 500 * effectiveRow);
+        let multiY = multiX * 0.53;
+        //let multiX = [0, 0.075, 0.11, 0.17][i.row];
+        //let multiY = [0, 0.045, 0.05, 0.09][i.row];
+        context.setTransform(1, 0, -0.55 + 0.5 * c, 1, 0, 0);
+        context.globalAlpha = i.viz.opacity;
+        drawTrapezoid(blankCard, i.viz.handX, i.viz.handY, multiX, multiX * 1.3, multiY);
+        context.fillStyle = "black";
+        context.font = "13px Heavyweight Regular";
+        context.fillText(i.name, i.viz.handX + 325 - 2.8 * i.name.length, i.viz.handY + 13);
+        /*let costSymbol = getImg("1blood"); //getImg(i.cost + i.costType);
+        if(costSymbol) {
+            drawTrapezoid(costSymbol, i.viz.handX + 295, i.viz.handY + 15, 0.28, 0.28 * 1.3, 0.18);
+        }*/
+        // Power and health
+        context.font = "18px Heavyweight Regular";
+        context.fillText(i.power.toString(), i.viz.handX + 268, i.viz.handY + 77);
+        if(i.currentHealth < i.baseHealth) context.fillStyle = "darkred";
+        context.fillText(i.currentHealth.toString(), i.viz.handX + 365, i.viz.handY + 80);
+    }
+    context.globalAlpha = 1;
     // Draw the hand
-    for(let i of game.hand) {
+    for(let i of Game.hand) {
         // Fix X position
-        let baseX = 675 + 70 * (game.hand.indexOf(i) - 0.5 * game.hand.length);
-        let goalX = baseX + (i.isHovering() ? -50 : game.hand.filter(x => x.isHovering(false)).length == 0 ? 0 : mouse.adjustedX > baseX ? -50 : 50);
+        let baseX = 675 + 70 * (Game.hand.indexOf(i) - 0.5 * Game.hand.length);
+        let goalX = baseX + (i.isHovering() ? -50 : Game.hand.filter(x => x.isHovering(false)).length == 0 ? 0 : mouse.adjustedX > baseX ? -50 : 50);
         i.viz.handX += 0.3 * (goalX - i.viz.handX);
         let goalY = 450 - (i.isHovering() ? 100 : 0);
         i.viz.handY += 0.3 * (goalY - i.viz.handY);
@@ -123,24 +162,6 @@ function updateCanvas() {
             context.drawImage(sigils[0], i.viz.handX + 50, i.viz.handY + 176, 70, 70);
         }
     }
-    for(let i of game.battlefield) {
-        let c = i.column - 1;
-        let goalX = 425 - 50 * c;
-        i.viz.handX += 0.3 * (goalX - i.viz.handX);
-        let goalY = [0, 225, 280, 345][i.row];
-        i.viz.handY += 0.3 * (goalY - i.viz.handY);
-        let multiX = [0, 0.075, 0.11, 0.17][i.row];
-        let multiY = [0, 0.045, 0.05, 0.09][i.row];
-        context.setTransform(1, 0, -0.55 + 0.5 * c, 1, 0, 0);
-        drawTrapezoid(blankCard, i.viz.handX, i.viz.handY, multiX, multiX * 1.3, multiY);
-        context.fillStyle = "black";
-        context.font = "13px Heavyweight Regular";
-        context.fillText(i.name, i.viz.handX + 325 - 2.8 * i.name.length, i.viz.handY + 13);
-        let costSymbol = getImg("1blood"); //getImg(i.cost + i.costType);
-        if(costSymbol) {
-            drawTrapezoid(costSymbol, i.viz.handX + 295, i.viz.handY + 15, 0.28, 0.28 * 1.3, 0.18);
-        }
-    }
 
     // FG
     fgContext.setTransform(1, 0, 0, 1, 0, 0);
@@ -157,7 +178,7 @@ function updateCanvas() {
     fgContext.drawImage(scales, 150, 0);
     let meter = getImg("meter");
     // Meter rotates based on damage
-    let deg = 8 * game.damage - 1;
+    let deg = 8 * Game.damage - 1;
     fgContext.setTransform(1, 0, 0, 1, 0, 0);
     fgContext.translate(340, 80);
     fgContext.scale(1, 0.9 - deg * 0.003);
@@ -167,7 +188,7 @@ function updateCanvas() {
     fgContext.fillStyle = "orange";
     fgContext.font = "30px Heavyweight Regular";
     fgContext.setTransform(1, 0, 0, 1, 0, 0);
-    fgContext.fillText(game.leshyText, 675 - 5.7 * game.leshyText.length, 40);
+    fgContext.fillText(Game.leshyText, 675 - 5.7 * Game.leshyText.length, 40);
 }
 
 export function startGame() {
@@ -192,10 +213,10 @@ export function startGame() {
             bestiary.turkeyVulture()
         ];
         for(let i of deck) {
-            game.deck.push(i);
+            Game.deck.push(i);
         }
-        game.leshyText = "Another challenger... it has been ages. Perhaps you have forgotten how this game is played. Allow me to remind you.";
-        game.startCombat();
+        Game.leshyText = "Another challenger... it has been ages. Perhaps you have forgotten how this game is played. Allow me to remind you.";
+        Game.startCombat();
         setInterval(updateCanvas, 33);
     } catch(e) {
         alert(e);

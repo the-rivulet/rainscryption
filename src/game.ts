@@ -2,19 +2,19 @@ import type { Card } from "card.js";
 import { Zone, Cost, choice, mouse } from "./globals.js";
 import { bestiary } from "./bestiary.js";
 
-class Game {
-    deck: Card[] = [];
-    inCombat = false;
-    hand: Card[] = [];
-    drawPile: Card[] = [];
-    sideDeckPile: Card[] = [];
-    battlefield: Card[] = [];
-    incomingCards: Card[] = [];
-    damage = 0;
-    currentlyPlaying: Card;
-    bloodPaid = 0;
-    leshyText = "";
-    startCombat() {
+export class Game {
+    static deck: Card[] = [];
+    static inCombat = false;
+    static hand: Card[] = [];
+    static drawPile: Card[] = [];
+    static sideDeckPile: Card[] = [];
+    static battlefield: Card[] = [];
+    static fadingCards: Card[] = [];
+    static damage = 0;
+    static currentlyPlaying: Card;
+    static bloodPaid = 0;
+    static leshyText = "";
+    static startCombat() {
         this.inCombat = true;
         this.hand = [];
         this.drawPile = [];
@@ -52,15 +52,29 @@ class Game {
             this.drawPile.push(i);
         }
     }
-    // 220 280 340 430
-    get hoveredRow() {
+    static ringBell() {
+        Game.leshyText = "Ding dong!";
+        for(let i of Game.battlefield.filter(x => x.row == 3)) {
+            setTimeout(function() {
+                i.viz.handY -= 100;
+                let enemy = Game.cardAt(2, i.column);
+                if(enemy) {
+                    enemy.currentHealth -= i.power;
+                    if(enemy.currentHealth <= 0) enemy.moveTo(Zone.limbo);
+                } else {
+                    Game.damage += i.power;
+                }
+            }, 100 + i.column * 500);
+        }
+    }
+    static get hoveredRow() {
         if(mouse.adjustedY < 220) return 0;
         if(mouse.adjustedY < 280) return 1;
         if(mouse.adjustedY < 340) return 2;
         if(mouse.adjustedY < 430) return 3;
         return 0;
     }
-    get hoveredColumn() {
+    static get hoveredColumn() {
         if(mouse.adjustedX < 450) return 0;
         if(mouse.adjustedX < 600) return 1;
         if(mouse.adjustedX < 750) return 2;
@@ -68,6 +82,10 @@ class Game {
         if(mouse.adjustedX < 1050) return 4;
         return 0;
     }
+    static cardAt(row: number, column: number) {
+        for(let i of this.battlefield) {
+            if(i.row == row && i.column == column) return i;
+        }
+    }
+    static get hoveredCard() {return this.cardAt(this.hoveredRow, this.hoveredColumn);}
 }
-
-export let game = new Game();

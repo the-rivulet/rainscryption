@@ -42,5 +42,6 @@ export enum Player {
 }
 
 export enum Sigil {
-    airborne = "airborne"
+    airborne = "airborne",
+    worthySacrifice = "worthy sacrifice"
 }
